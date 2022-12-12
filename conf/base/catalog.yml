@@ -1,0 +1,120 @@
+# Here you can define all your data sets by using simple YAML syntax.
+
+glacier:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/glacier.csv
+
+mass_balance:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/mass_balance.csv
+
+change:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/change.csv
+
+state:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/state.csv
+
+# Intermediate data sets
+
+loaded_glacier:
+  type: pandas.ParquetDataSet
+  filepath: data/02_intermediate/loaded_glacier.pq
+
+loaded_mass_balance:
+  type: pandas.ParquetDataSet
+  filepath: data/02_intermediate/loaded_mass_balance.pq
+
+loaded_change:
+  type: pandas.ParquetDataSet
+  filepath: data/02_intermediate/loaded_change.pq
+
+loaded_state:
+  type: pandas.ParquetDataSet
+  filepath: data/02_intermediate/loaded_state.pq
+
+merged_data:
+  type: pandas.ParquetDataSet
+  filepath: data/03_primary/merged_data.pq
+
+
+# Active modelling
+####################################################################################################
+# Model data sets
+
+active_modelling_pipeline.model_input_table:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/model_input_table.pkl
+
+# Models
+
+active_modelling_pipeline.encoder:
+  type: pickle.PickleDataSet
+  filepath: models/encoder.joblib
+  versioned: true
+
+active_modelling_pipeline.scaler:
+  type: pickle.PickleDataSet
+  filepath: models/scaler.joblib
+  versioned: true
+
+active_modelling_pipeline.kmeans:
+  type: pickle.PickleDataSet
+  filepath: models/kmeans.joblib
+  versioned: true
+
+# Model evaluation
+
+active_modelling_pipeline.labels:
+  type: pickle.PickleDataSet
+  filepath: data/06_model_output/labels.pkl
+
+active_modelling_pipeline.centers:
+  type: pickle.PickleDataSet
+  filepath: data/06_model_output/centers.pkl
+
+active_modelling_pipeline.cluster_map:
+  type: plotly.JSONDataSet
+  filepath: data/08_reporting/cluster_map.json
+
+
+# Candidate modeling pipeline
+####################################################################################################
+
+# Model data sets
+
+candidate_modelling_pipeline.model_input_table:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/model_input_table_candidate.pkl
+
+# Models
+
+candidate_modelling_pipeline.encoder:
+  type: pickle.PickleDataSet
+  filepath: models/encoder_candidate.joblib
+  versioned: true
+
+candidate_modelling_pipeline.scaler:
+  type: pickle.PickleDataSet
+  filepath: models/scaler_candidate.joblib
+  versioned: true
+
+candidate_modelling_pipeline.kmeans:
+  type: pickle.PickleDataSet
+  filepath: models/kmeans_candidate.joblib
+  versioned: true
+
+# Model evaluation
+
+candidate_modelling_pipeline.labels:
+  type: pickle.PickleDataSet
+  filepath: data/06_model_output/labels_candidate.pkl
+
+candidate_modelling_pipeline.centers:
+  type: pickle.PickleDataSet
+  filepath: data/06_model_output/centers_candidate.pkl
+
+candidate_modelling_pipeline.cluster_map:
+  type: plotly.JSONDataSet
+  filepath: data/08_reporting/cluster_map_candidate.json
