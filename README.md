@@ -2,9 +2,9 @@
 
 ## Overview
 
-This is your new Kedro project, which was generated using `Kedro 0.18.4`.
-
-Take a look at the [Kedro documentation](https://kedro.readthedocs.io) to get started.
+This repository was created to demonstrate basic big data processing tools using Kedro and Dask.
+The python package `glacier_clustering` contains the code for a data pipeline that processes data from the [World Glacier Monitoring Service](https://wgms.ch) and clusters the glaciers into groups based on their behaviour over time.
+A detailed project description can be found in the [project report](docs/kedro_and_dask.md).
 
 ## Rules and guidelines
 
@@ -31,6 +31,26 @@ You can run your Kedro project with:
 
 ```
 kedro run
+```
+
+Running the project using Dask requires a few more steps:
+
+First: start a Dask cluster. This can be done by running the following command:
+
+```
+dask scheduler
+```
+
+Then, in a separate terminal, run the following command to start a Dask worker:
+
+```
+dask worker localhost:8786
+```
+
+Finally, run the following command to run the pipeline:
+
+```
+kedro run --env dask --runner glacier_clusterin.runner.DaskRunner
 ```
 
 ## How to test your Kedro project
