@@ -1,48 +1,26 @@
 active_modelling_pipeline:
   model_options:
     n_clusters: 3
-    max_iter: 300
-    tol: 0.0001
+    metric: "dtw"
     random_state: 42
-    cat_features:
-      - PRIM_CLASSIFIC
-      - FORM
-      - FRONTAL_CHARS
-    num_features:
+    n_jobs: 5
+    features:
       - AREA
       - LENGTH
-      - HIGHEST_ELEVATION
       - MEDIAN_ELEVATION
-      - LOWEST_ELEVATION
       - AREA_CHANGE
       - THICKNESS_CHG
       - VOLUME_CHANGE
-      - WINTER_BALANCE
-      - SUMMER_BALANCE
       - ANNUAL_BALANCE
-      - LATITUDE
-      - LONGITUDE
 
 
 candidate_modelling_pipeline:
   model_options:
     n_clusters: 5
-    max_iter: 300
-    tol: 0.0001
+    metric: "dtw"
     random_state: 42
-    cat_features:
-      - PRIM_CLASSIFIC
-      - FORM
-      - FRONTAL_CHARS
-    num_features:
-      - AREA
-      - LENGTH
-      - HIGHEST_ELEVATION
-      - MEDIAN_ELEVATION
-      - LOWEST_ELEVATION
+    n_jobs: 5
+    features:
       - AREA_CHANGE
       - THICKNESS_CHG
       - VOLUME_CHANGE
-      - WINTER_BALANCE
-      - SUMMER_BALANCE
-      - ANNUAL_BALANCE

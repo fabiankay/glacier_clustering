@@ -5,7 +5,7 @@ generated using Kedro 0.18.4
 
 from kedro.pipeline import Pipeline, node, pipeline
 
-from .nodes import merge_data, load_state, load_change, load_glacier, load_mass_balance
+from .nodes import merge_data, load_state, load_change, load_glacier, load_mass_balance, to_timeseries
 
 
 def create_pipeline(**kwargs) -> Pipeline:
@@ -39,5 +39,11 @@ def create_pipeline(**kwargs) -> Pipeline:
             inputs=["loaded_glacier", "loaded_change", "loaded_state", "loaded_mass_balance"],
             outputs="merged_data",
             name="merge_data_node",
+        ),
+        node(
+            func=to_timeseries,
+            inputs="merged_data",
+            outputs=["timeseries_data", "reference_data"],
+            name="to_timeseries_node",
         )
     ])

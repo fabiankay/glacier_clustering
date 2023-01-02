@@ -38,6 +38,13 @@ merged_data:
   type: pandas.ParquetDataSet
   filepath: data/03_primary/merged_data.pq
 
+timeseries_data:
+  type: pickle.PickleDataSet
+  filepath: data/03_primary/timeseries_data.pkl
+
+reference_data:
+  type: pickle.PickleDataSet
+  filepath: data/03_primary/reference_data.pkl
 
 # Active modelling
 ####################################################################################################
@@ -75,8 +82,9 @@ active_modelling_pipeline.centers:
   filepath: data/06_model_output/centers.pkl
 
 active_modelling_pipeline.cluster_map:
-  type: plotly.JSONDataSet
-  filepath: data/08_reporting/cluster_map.json
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/cluster_map_active.png
+  versioned: true
 
 
 # Candidate modeling pipeline
@@ -116,5 +124,6 @@ candidate_modelling_pipeline.centers:
   filepath: data/06_model_output/centers_candidate.pkl
 
 candidate_modelling_pipeline.cluster_map:
-  type: plotly.JSONDataSet
-  filepath: data/08_reporting/cluster_map_candidate.json
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/cluster_map_candidate.png
+  versioned: true

@@ -1,7 +1,18 @@
+from typing import Tuple
+
+import numpy as np
 import pandas as pd
+from tslearn.utils import to_time_series_dataset
 from logging import getLogger
 
 log = getLogger(__name__)
+
+
+def get_cumsum(df):
+    cols = df.select_dtypes(include=np.number).columns.tolist()
+    df = df.loc[df["YEAR"] >= 2000, cols].sort_values(["YEAR", "WGMS_ID"])
+    return df.groupby(["WGMS_ID", "YEAR"]).sum().groupby(level=0).cumsum().reset_index()
+
 
 def load_glacier(glacier: pd.DataFrame) -> pd.DataFrame:
     """Load glaciers to remove duplicates and glaciers without position.
@@ -39,10 +50,13 @@ def load_mass_balance(mass_balance: pd.DataFrame) -> pd.DataFrame:
         Preprocessed mass balance data.
     """
 
-    mass_balance = mass_balance.drop_duplicates(subset=["WGMS_ID"])
+    # mass_balance = mass_balance.drop_duplicates(subset=["WGMS_ID"])
     mass_balance = mass_balance.dropna(subset=["WGMS_ID"])
-    mass_balance = mass_balance[["WGMS_ID", "YEAR", "WINTER_BALANCE", "SUMMER_BALANCE", "ANNUAL_BALANCE"]]
-    mass_balance = mass_balance.sort_values(by=["WGMS_ID", "YEAR"], ascending=False).drop_duplicates(subset=["WGMS_ID"])
+    mass_balance = mass_balance.loc[
+        mass_balance["YEAR"] >= 2000,
+        ["WGMS_ID", "YEAR", "WINTER_BALANCE", "SUMMER_BALANCE", "ANNUAL_BALANCE"]
+    ]
+    mass_balance = get_cumsum(mass_balance)
     return mass_balance.fillna(0)
 
 
@@ -60,10 +74,10 @@ def load_change(change: pd.DataFrame) -> pd.DataFrame:
         Preprocessed change data.
     """
 
-    change = change.drop_duplicates(subset=["WGMS_ID"])
+    # change = change.drop_duplicates(subset=["WGMS_ID"])
     change = change.dropna(subset=["WGMS_ID"])
-    change = change[["WGMS_ID", "YEAR", "AREA_CHANGE", "THICKNESS_CHG", "VOLUME_CHANGE"]]
-    change = change.sort_values(by=["WGMS_ID", "YEAR"], ascending=False).drop_duplicates(subset=["WGMS_ID"])
+    change = change.loc[change["YEAR"] >= 2000, ["WGMS_ID", "YEAR", "AREA_CHANGE", "THICKNESS_CHG", "VOLUME_CHANGE"]]
+    change = get_cumsum(change)
     return change.fillna(0)
 
 
@@ -81,10 +95,13 @@ def load_state(state: pd.DataFrame) -> pd.DataFrame:
         Preprocessed state data.
     """
 
-    state = state.drop_duplicates(subset=["WGMS_ID"])
+    # state = state.drop_duplicates(subset=["WGMS_ID"])
     state = state.dropna(subset=["WGMS_ID"])
-    state = state[["WGMS_ID", "YEAR", "AREA", "LENGTH", "HIGHEST_ELEVATION", "MEDIAN_ELEVATION", "LOWEST_ELEVATION"]]
-    state = state.sort_values(by=["WGMS_ID", "YEAR"], ascending=False).drop_duplicates(subset=["WGMS_ID"])
+    state = state.sort_values(by=["WGMS_ID", "YEAR"], ascending=False)
+    state = state.loc[
+        state["YEAR"] >= 2000,
+        ["WGMS_ID", "YEAR", "AREA", "LENGTH", "HIGHEST_ELEVATION", "MEDIAN_ELEVATION", "LOWEST_ELEVATION"]
+    ].sort_values(["YEAR", "WGMS_ID"])
     return state
 
 
@@ -112,8 +129,50 @@ def merge_data(
         Merged data.
     """
 
-    merged_data = loaded_glacier.merge(loaded_change, on="WGMS_ID", how="left")
-    merged_data = merged_data.merge(loaded_state, on="WGMS_ID", how="left")
-    merged_data = merged_data.merge(loaded_mass_balance, on="WGMS_ID", how="left")
-    log.warning(merged_data.isna().sum())
-    return merged_data.fillna(0)
+    merged_data = loaded_glacier.merge(loaded_change, on="WGMS_ID", how="right")
+    merged_data = merged_data.merge(loaded_state, on=["WGMS_ID", "YEAR"], how="outer")
+    merged_data = merged_data.merge(loaded_mass_balance, on=["WGMS_ID", "YEAR"], how="outer")
+    # log.warning(merged_data.isna().sum())
+    return merged_data
+
+
+def to_timeseries(merged_data: pd.DataFrame) -> Tuple[np.array, pd.DataFrame]:
+    """ Convert merged data to timeseries for each WGMS_ID.
+
+    Parameters
+    ----------
+    merged_data : pd.DataFrame
+        Merged data.
+
+    Returns
+    -------
+    np.array
+        Array of Timeseries data.
+    pd.DataFrame
+        Glaciers with WGMS_ID and LATITUDE, LONGITUDE.
+    """
+
+    features = ["AREA_CHANGE", "THICKNESS_CHG", "VOLUME_CHANGE", "ANNUAL_BALANCE", "AREA", "LENGTH", "MEDIAN_ELEVATION"]
+    merged_data.dropna(subset=features, axis=0, how='all', inplace=True)
+
+    x = merged_data.WGMS_ID.factorize()[0]
+    y = merged_data.groupby(x).cumcount().values
+    vals = merged_data.loc[:, features].values
+    out_shp = (x.max() + 1, y.max() + 1, vals.shape[1])
+    out = np.full(out_shp, np.nan)
+    out[x, y] = vals
+
+    timeseries = to_time_series_dataset(out)
+
+    # t = None
+    #
+    # for series in timeseries[:100]:
+    #     mask = []
+    #     for year in series:
+    #         mask.append(np.isnan(year).all())
+    #     if not all(mask):
+    #         if t is None:
+    #             t = [series]
+    #         else:
+    #             t = np.concatenate((t, [series]), axis=0)
+    return timeseries, merged_data
