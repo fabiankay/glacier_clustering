@@ -42,7 +42,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=to_timeseries,
-            inputs="merged_data",
+            inputs=["merged_data", "params:model_options"],
             outputs=["timeseries_data", "reference_data"],
             name="to_timeseries_node",
         )

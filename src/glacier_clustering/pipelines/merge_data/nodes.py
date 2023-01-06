@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -136,7 +136,7 @@ def merge_data(
     return merged_data
 
 
-def to_timeseries(merged_data: pd.DataFrame) -> Tuple[np.array, pd.DataFrame]:
+def to_timeseries(merged_data: pd.DataFrame, parameters: Dict) -> Tuple[np.array, pd.DataFrame]:
     """ Convert merged data to timeseries for each WGMS_ID.
 
     Parameters
@@ -152,8 +152,15 @@ def to_timeseries(merged_data: pd.DataFrame) -> Tuple[np.array, pd.DataFrame]:
         Glaciers with WGMS_ID and LATITUDE, LONGITUDE.
     """
 
-    features = ["AREA_CHANGE", "THICKNESS_CHG", "VOLUME_CHANGE", "ANNUAL_BALANCE", "AREA", "LENGTH", "MEDIAN_ELEVATION"]
-    merged_data.dropna(subset=features, axis=0, how='all', inplace=True)
+    # merged_data = merged_data.iloc[:500000, :]
+
+    features = parameters["features"]
+    merged_data.dropna(subset=features, how='all', axis=0, inplace=True)  # how='all',
+    merged_data = pd.concat(g for _, g in merged_data.groupby("WGMS_ID") if len(g) > 1)
+    merged_data = pd.concat(g for _, g in merged_data.groupby("YEAR") if len(g) > 1)
+    # merged_data = pd.concat(g for _, g in merged_data.groupby("WGMS_ID") if len(g) > 1)
+    # merged_data = pd.concat(g for _, g in merged_data.groupby("WGMS_ID") if len(g) > 1)
+    # merged_data = pd.concat(g for _, g in merged_data.groupby("WGMS_ID") if len(g) > 1)
 
     x = merged_data.WGMS_ID.factorize()[0]
     y = merged_data.groupby(x).cumcount().values
@@ -164,15 +171,9 @@ def to_timeseries(merged_data: pd.DataFrame) -> Tuple[np.array, pd.DataFrame]:
 
     timeseries = to_time_series_dataset(out)
 
-    # t = None
-    #
-    # for series in timeseries[:100]:
-    #     mask = []
-    #     for year in series:
-    #         mask.append(np.isnan(year).all())
-    #     if not all(mask):
-    #         if t is None:
-    #             t = [series]
-    #         else:
-    #             t = np.concatenate((t, [series]), axis=0)
-    return timeseries, merged_data
+    reference_data = merged_data.set_index(["WGMS_ID", "YEAR"])
+
+    print(timeseries.shape)
+    print(reference_data.shape)
+
+    return timeseries, reference_data

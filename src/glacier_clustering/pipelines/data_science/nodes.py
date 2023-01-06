@@ -4,6 +4,7 @@ from typing import Tuple, Dict, List
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt, pyplot
+import seaborn as sns
 from plotly.graph_objs import Figure
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -12,42 +13,6 @@ from sklearn.preprocessing import OneHotEncoder
 import plotly.express as px
 from tslearn.clustering import TimeSeriesKMeans
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
-
-
-def scale_data(X: pd.DataFrame, parameters: Dict) -> Tuple[pd.DataFrame, StandardScaler]:
-    """Scales the data.
-
-    Parameters
-    ----------
-    X : pd.DataFrame
-        Data of independent features.
-
-    Returns
-    -------
-    Tuple[pd.DataFrame, StandardScaler]
-        Scaled data of independent features and fitted scaler.
-    """
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X[parameters["num_features"]])
-    return X_scaled, scaler
-
-
-def encode_data(X: pd.DataFrame, parameters: Dict) -> Tuple[pd.DataFrame, OneHotEncoder]:
-    """Encodes categorical features.
-
-    Parameters
-    ----------
-    X : pd.DataFrame
-        Data of independent features.
-
-    Returns
-    -------
-    Tuple[pd.DataFrame, OneHotEncoder]
-        Encoded data of independent features and fitted encoder.
-    """
-    encoder = OneHotEncoder(handle_unknown="ignore")
-    X_encoded = encoder.fit_transform(X[parameters["cat_features"]])
-    return X_encoded, encoder
 
 
 def scale_timeseries(X: np.array, parameters: Dict) -> Tuple[np.array, TimeSeriesScalerMeanVariance]:
@@ -71,28 +36,6 @@ def scale_timeseries(X: np.array, parameters: Dict) -> Tuple[np.array, TimeSerie
     return X, scaler
 
 
-def create_model_data(X_scaled: pd.DataFrame, X_encoded: pd.DataFrame) -> pd.DataFrame:
-    """Creates a table with the model input data.
-
-    Parameters
-    ----------
-    X_scaled : pd.DataFrame
-        Data of scaled features.
-
-    X_encoded : pd.DataFrame
-        Data of encoded features.
-
-    Returns
-    -------
-    pd.DataFrame
-        Table with the model input data.
-    """
-    return pd.concat([
-        pd.DataFrame(X_scaled.toarray()),
-        pd.DataFrame(X_encoded)
-    ], axis=1)
-
-
 def train_model(X: np.array, parameters: Dict) -> Tuple[object, List, List]:
     """Trains a KMeans model.
 
@@ -112,7 +55,8 @@ def train_model(X: np.array, parameters: Dict) -> Tuple[object, List, List]:
         verbose=True,
         metric=parameters["metric"],
         random_state=parameters["random_state"],
-        n_jobs=parameters["n_jobs"]
+        n_jobs=parameters["n_jobs"],
+        max_iter=parameters["max_iter"]
     )
     km.fit_predict(X)
 
@@ -138,18 +82,13 @@ def visualize_model(X: pd.DataFrame, labels: List, km: object, parameters: Dict)
     None
     """
 
-    sz = X.shape[1]
-    fig = plt.figure()
-    for yi in range(parameters["n_clusters"]):
-        plt.subplot(3, 3, yi + 1)
-        for xx in X[labels == yi]:
-            plt.plot(xx.ravel(), "k-", alpha=.2)
-        plt.plot(km.cluster_centers_[yi].ravel(), "r-")
-        plt.xlim(0, sz)
-        plt.ylim(-4, 4)
-        plt.text(0.55, 0.85, 'Cluster %d' % (yi + 1),
-                 transform=plt.gca().transAxes)
-        if yi == 1:
-            plt.title("$k$-means")
+    reference_data = pd.DataFrame()
 
-    return plt
+    # add labels to md by first index level
+    for i, (idx, row) in enumerate(X.groupby(level=0)):
+        row["LABEL"] = labels[i]
+        reference_data = pd.concat([reference_data, row])
+
+    sns.lineplot(data=reference_data.reset_index(), x="YEAR", y="THICKNESS_CHG", hue="LABEL")
+
+    return plt, reference_data

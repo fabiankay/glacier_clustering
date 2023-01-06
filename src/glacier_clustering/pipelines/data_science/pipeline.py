@@ -6,33 +6,11 @@ generated using Kedro 0.18.4
 from kedro.pipeline import Pipeline, node
 from kedro.pipeline.modular_pipeline import pipeline
 
-from .nodes import encode_data, scale_data, train_model, visualize_model, create_model_data, scale_timeseries
-
-
-"""
-node(
-    func=encode_data,
-    inputs=["timeseries_data", "params:model_options"],
-    outputs=["encoded_data", "encoder"],
-    name="encode_data_node",
-),
-node(
-    func=scale_data,
-    inputs=["merged_data", "params:model_options"],
-    outputs=["scaled_data", "scaler"],
-    name="scale_data_node",
-),
-node(
-    func=create_model_data,
-    inputs=["encoded_data", "scaled_data"],
-    outputs="model_input_table",
-    name="create_model_data_node",
-),
-"""
+from .nodes import train_model, visualize_model, scale_timeseries
 
 
 def create_pipeline(**kwargs) -> Pipeline:
-    pipeline_instance = pipeline([
+    return pipeline([
         node(
             func=scale_timeseries,
             inputs=["timeseries_data", "params:model_options"],
@@ -47,21 +25,9 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=visualize_model,
-            inputs=["timeseries_data", "labels", "model", "params:model_options"],
-            outputs="cluster_map",
+            inputs=["reference_data", "labels", "model", "params:model_options"],
+            outputs=["cluster_map", "cluster_data"],
             name="visualize_model_node",
+            tags="visualize",
         ),
     ])
-
-    ds_pipeline_1 = pipeline(
-        pipe=pipeline_instance,
-        inputs="timeseries_data",
-        namespace="active_modelling_pipeline",
-    )
-    ds_pipeline_2 = pipeline(
-        pipe=pipeline_instance,
-        inputs="timeseries_data",
-        namespace="candidate_modelling_pipeline",
-    )
-
-    return ds_pipeline_1 + ds_pipeline_2
